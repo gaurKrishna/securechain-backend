@@ -17,7 +17,7 @@ class SignUpAPI(APIView):
         serializer = UserSerializer(data=request.data)
 
         if not serializer.is_valid():
-            return Response(serializer.error_messages)
+            return Response(serializer.errors)
 
         user = User.objects.create_user(**serializer.validated_data)
         
