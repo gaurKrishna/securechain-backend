@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,7 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware'
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'api.urls'
@@ -107,6 +108,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication'
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -121,10 +132,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-CORS_ORIGIN_ALLOW_ALL = (
-    True
-)
-CORS_ALLOW_CREDENTIALS = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -136,12 +143,3 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication'
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
-}
