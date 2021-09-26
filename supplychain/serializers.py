@@ -7,3 +7,4 @@ class SupplyChainSerializer(ModelSerializer):
     class Meta:
         model = SupplyChain
         fields = "__all__" 
+        read_only_fields = ['owner']

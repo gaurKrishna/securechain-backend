@@ -1,4 +1,5 @@
 from django.db import models
+from django.views import generic
 from authentication.models import User
 from supplychain.models import SupplyChain
 
@@ -12,7 +13,6 @@ class Entity(models.Model):
     entity_name = models.CharField(max_length=255, blank=False, null=False)
     template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name="template")
     supply_chain = models.ForeignKey(SupplyChain, on_delete=models.CASCADE)
-    attributes = models.TextField(blank=False, null=False)
 
 
 class Instance(models.Model):
@@ -21,6 +21,17 @@ class Instance(models.Model):
 
 
 class GenericAttributes(models.Model):
+    TYPES = [
+        ("Numeric", "Numeric"),
+        ("String", "String"),
+        ("Date", "Date")
+    ]
     name = models.CharField(max_length=255, blank=False, null=False)
-    value = models.TextField(blank=False, null=False)
-    instance = models.ForeignKey(Instance, on_delete=models.CASCADE)
+    type = models.CharField(max_length=8, choices=TYPES, null=True)
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, null=True, related_name="generic_attributes")
+
+
+class GenericAttributeData(models.Model):
+    data = models.CharField(max_length=255, null=False, blank=False)
+    generic_attribute = models.ForeignKey(GenericAttributes, on_delete=models.CASCADE)
+    instance = models.ForeignKey(Instance, on_delete=models.CASCADE, related_name="generic_attribute_data")
