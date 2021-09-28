@@ -196,6 +196,7 @@ class FlowApi(ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
         if request.user.role != "OWNER":
+            return Response({"role": request.user.role, "name": request.user.email}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
         source = serializer.validated_data.get("source")
