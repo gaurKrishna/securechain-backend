@@ -13,7 +13,6 @@ class SupplyChainAPI(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.user.role != "OWNER":
-            return Response({"error": request.user.role}, status=status.HTTP_401_UNAUTHORIZED)
             return Response({"unauthorized": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.serializer_class(data=request.data)

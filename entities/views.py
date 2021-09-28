@@ -8,8 +8,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import TemplateSerializer, EntitySerializer, InstanceSerialzer, GenericAttributesSerializer
-from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData
+from .serializers import TemplateSerializer, EntitySerializer, InstanceSerializer, GenericAttributesSerializer, FlowSerializer
+from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData, Flow
 
 
 class TemplateApi(ModelViewSet):
@@ -144,7 +144,7 @@ class EntityApi(ModelViewSet):
 
 class InstanceApi(ModelViewSet):
     queryset = Instance.objects.all()
-    serializer_class = InstanceSerialzer
+    serializer_class = InstanceSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
@@ -156,7 +156,52 @@ class InstanceApi(ModelViewSet):
         if request.user.role != "PARTICIPANT":
             return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        generic_attribute_data = serializer.validated_data.get("generic_attributes_data")
+        generic_attribute_data = serializer.validated_data.pop("generic_attribute_data")
 
+        entity = serializer.validated_data.get("entity")
 
+        generic_attributes = list(entity.generic_attributes.all())
 
+        for gd in generic_attribute_data:
+            if gd["generic_attribute"] not in generic_attributes:
+                return Response(
+                    {"Error": f"Generic attribute data passed must be from the generic attributes of the entity"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        instance = Instance.objects.create(**serializer.validated_data)
+
+        for gd in generic_attribute_data:
+            gd["instance"] = instance
+            GenericAttributeData.objects.create(**gd)
+
+        return Response(
+            {
+                "Success": "Instance created successfully", 
+                "data": InstanceSerializer(instance).data
+            }, 
+            status=status.HTTP_200_OK)
+        
+
+class FlowApi(ModelViewSet):
+    queryset = Flow.objects.all()
+    serializer_class = FlowSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.serializer_class(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+        if request.user.role != "OWNER":
+            return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        source = serializer.validated_data.get("source")
+        destination = serializer.validated_data.get("destination")
+
+        if source.supply_chain != destination.supply_chain:
+            return Response({"error": "The source and destination should beong to the same supply chain"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().create(request, *args, **kwargs)

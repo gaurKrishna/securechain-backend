@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.deletion import CASCADE
 from django.views import generic
 from authentication.models import User
 from supplychain.models import SupplyChain
@@ -35,3 +36,7 @@ class GenericAttributeData(models.Model):
     data = models.CharField(max_length=255, null=False, blank=False)
     generic_attribute = models.ForeignKey(GenericAttributes, on_delete=models.CASCADE)
     instance = models.ForeignKey(Instance, on_delete=models.CASCADE, related_name="generic_attribute_data")
+
+class Flow(models.Model):
+    source = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="flow_source")
+    destination = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="flow_destination")
