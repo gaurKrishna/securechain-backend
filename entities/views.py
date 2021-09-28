@@ -202,8 +202,6 @@ class FlowApi(ModelViewSet):
         source = serializer.validated_data.get("source")
         destination = serializer.validated_data.get("destination")
 
-        return Response({"source": source, "destination": destination}, status=status.HTTP_200_OK)
-
         if source.supply_chain != destination.supply_chain:
             return Response({"error": "The source and destination should beong to the same supply chain"}, status=status.HTTP_400_BAD_REQUEST)
 
