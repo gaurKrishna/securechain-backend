@@ -6,7 +6,7 @@ from django.contrib.auth.models import (
 )
 
 class UserManager(BaseUserManager):
-    def create_user(self, firstname, lastname, email, role, password):
+    def create_user(self, email, role, password, firstname, lastname):
         if email is None:
             raise TypeError("Eamil address is required to create user")
 
@@ -19,7 +19,7 @@ class UserManager(BaseUserManager):
         if email is None:
             raise TypeError("Email address is required to create super user")
 
-        user = self.create_user(email, "ADMIN", password)
+        user = self.create_user(email, "ADMIN", password, firstname=" ", lastname=" ")
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
