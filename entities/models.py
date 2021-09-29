@@ -23,12 +23,13 @@ class Instance(models.Model):
 
 class GenericAttributes(models.Model):
     TYPES = [
-        ("Numeric", "Numeric"),
+        ("Alphanumeric", "Alphanumeric"),
         ("String", "String"),
-        ("Date", "Date")
+        ("Date", "Date"),
+        ("Number", "Number")
     ]
     name = models.CharField(max_length=255, blank=False, null=False)
-    type = models.CharField(max_length=8, choices=TYPES, null=True)
+    type = models.CharField(max_length=12, choices=TYPES, null=True)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE, null=True, related_name="generic_attributes")
 
 
