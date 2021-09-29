@@ -56,6 +56,17 @@ class EntityApi(ModelViewSet):
     serializer_class = EntitySerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        supply_chain = request.GET.get('supply_chain', None)
+
+        if supply_chain:
+            entities = Entity.objects.filter(supply_chain_id = supply_chain)
+            response_data = EntitySerializer(entities, many=True).data
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        return super().list(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
