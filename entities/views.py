@@ -5,10 +5,19 @@ from django.http.request import validate_host
 from django.views import generic
 from rest_framework import response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import TemplateSerializer, EntitySerializer, InstanceSerializer, GenericAttributesSerializer, FlowSerializer
+from .serializers import (
+    EntityBySupplychainSerializer, 
+    TemplateSerializer, 
+    EntitySerializer, 
+    InstanceSerializer, 
+    GenericAttributesSerializer, 
+    FlowSerializer,
+    EntityBySupplychainSerializer
+)
 from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData, Flow
 
 
@@ -206,3 +215,22 @@ class FlowApi(ModelViewSet):
             return Response({"error": "The source and destination should beong to the same supply chain"}, status=status.HTTP_400_BAD_REQUEST)
 
         return super().create(request, *args, **kwargs)
+
+
+class EntityBySupplychain(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    serializer_class = EntityBySupplychainSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        entities = Entity.objects.filter(supply_chain=serializer.validated_data.get("supply_chain"))
+
+        response_data = EntitySerializer(entities, many=True)
+
+        return Response(response_data.data, status=status.HTTP_200_OK)
+
