@@ -18,7 +18,15 @@ class Entity(models.Model):
 
 class Instance(models.Model):
     name = models.CharField(max_length=255, blank=False, null=False)
-    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="parent_entity")
+    connected_supply_chain = models.ForeignKey(
+        SupplyChain, 
+        on_delete=models.CASCADE, 
+        related_name="instace_supply_chain", 
+        blank=True, 
+        null=True
+    )
+    connecting_entity = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="connector_entity", blank=True, null=True)
 
 
 class GenericAttributes(models.Model):
