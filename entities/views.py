@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
+from supplychain.models import SupplyChain
 from .serializers import (
     EntityBySupplychainSerializer, 
     TemplateSerializer, 
@@ -19,6 +20,8 @@ from .serializers import (
     EntityBySupplychainSerializer
 )
 from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData, Flow
+from supplychain.serializers import SupplyChainSerializer
+from supplychain.models import SupplyChain
 
 
 class TemplateApi(ModelViewSet):
@@ -182,6 +185,18 @@ class InstanceApi(ModelViewSet):
 
         generic_attributes = list(entity.generic_attributes.all())
 
+        connected_supply_chain = serializer.validated_data.get("connected_supply_chain", None)
+
+        connecting_entity = serializer.validated_data.get("connecting_entity", None)
+
+        if connected_supply_chain:
+            if connecting_entity:
+                connected_flow = Flow(source=entity, destination=connecting_entity)
+            else:
+                return Response({"error": "Connecting entity must be selected if you want to add your supply chain"}, status=status.HTTP_400_BAD_REQUEST)
+
+            
+
         for gd in generic_attribute_data:
             if gd["generic_attribute"] not in generic_attributes:
                 return Response(
@@ -190,6 +205,7 @@ class InstanceApi(ModelViewSet):
                 )
 
         instance = Instance.objects.create(**serializer.validated_data)
+        connected_flow.save()
 
         for gd in generic_attribute_data:
             gd["instance"] = instance
@@ -245,3 +261,13 @@ class EntityBySupplychain(APIView):
 
         return Response(response_data.data, status=status.HTTP_200_OK)
 
+
+class MySupplyChain(APIView):
+    permission_classes = [IsAuthenticated]
+    serializers_class = SupplyChain
+
+    def get(self, request):
+        my_supply_chain = SupplyChain.objects.filter(owner=request.user)
+        response_data = SupplyChainSerializer(my_supply_chain, many=True).data
+
+        return Response(response_data, status=status.HTTP_200_OK)
