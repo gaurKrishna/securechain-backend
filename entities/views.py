@@ -231,12 +231,11 @@ class FlowApi(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-        if request.user.role != "OWNER":
-            return Response({"role": request.user.role, "name": request.user.email}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-
         source = serializer.validated_data.get("source")
         destination = serializer.validated_data.get("destination")
+
+        if request.user != source.supply_chain.owner:
+            return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if source.supply_chain != destination.supply_chain:
             return Response({"error": "The source and destination should beong to the same supply chain"}, status=status.HTTP_400_BAD_REQUEST)

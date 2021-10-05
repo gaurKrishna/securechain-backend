@@ -12,9 +12,6 @@ class SupplyChainAPI(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        if request.user.role != "OWNER":
-            return Response({"unauthorized": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-
         serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
