@@ -27,6 +27,7 @@ class Instance(models.Model):
         null=True
     )
     connecting_entity = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="connector_entity", blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="instance_user", blank=True, null=True)
 
 
 class GenericAttributes(models.Model):
