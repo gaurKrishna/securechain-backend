@@ -11,13 +11,12 @@ from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from supplychain.models import SupplyChain
 from .serializers import (
-    EntityBySupplychainSerializer, 
+    SupplychainPKSerializer, 
     TemplateSerializer, 
     EntitySerializer, 
     InstanceSerializer, 
     GenericAttributesSerializer, 
     FlowSerializer,
-    EntityBySupplychainSerializer
 )
 from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData, Flow
 from supplychain.serializers import SupplyChainSerializer
@@ -189,6 +188,7 @@ class InstanceApi(ModelViewSet):
 
         connecting_entity = serializer.validated_data.get("connecting_entity", None)
 
+        connected_flow = None
         if connected_supply_chain:
             if connecting_entity:
                 connected_flow = Flow(source=entity, destination=connecting_entity)
@@ -204,8 +204,10 @@ class InstanceApi(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        instance = Instance.objects.create(**serializer.validated_data)
-        connected_flow.save()
+        instance = Instance.objects.create(**serializer.validated_data, user=request.user)
+        
+        if connected_flow:
+            connected_flow.save()
 
         for gd in generic_attribute_data:
             gd["instance"] = instance
@@ -246,7 +248,7 @@ class FlowApi(ModelViewSet):
 class EntityBySupplychain(APIView):
     
     permission_classes = [IsAuthenticated]
-    serializer_class = EntityBySupplychainSerializer
+    serializer_class = SupplychainPKSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -270,3 +272,32 @@ class MySupplyChain(APIView):
         response_data = SupplyChainSerializer(my_supply_chain, many=True).data
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class AllowedReceivers(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SupplychainPKSerializer
+
+    def get(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        supply_chain = serializer.validated_data.get("supply_chain")
+
+        try:
+            instance = Instance.objects.get(user=request.user)
+        except Instance.DoesNotExist:
+            return Response({"error": "User not an instance of supply chain"})
+
+        entity = instance.entity
+
+        destination_entity = Flow.objects.filter(source=entity).values_list("destination", flat=True)
+
+        destination_instances = Instance.objects.filter(entity__in = destination_entity)
+
+        response_data = InstanceSerializer(destination_instances, many=True).data
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
