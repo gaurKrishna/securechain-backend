@@ -39,6 +39,7 @@ class InstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instance
         fields = "__all__"
+        read_only_fields = ["user"]
 
 
 class FlowSerializer(serializers.ModelSerializer):
@@ -47,5 +48,5 @@ class FlowSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class EntityBySupplychainSerializer(serializers.Serializer):
+class SupplychainPKSerializer(serializers.Serializer):
     supply_chain = serializers.PrimaryKeyRelatedField(queryset = SupplyChain.objects.all())
