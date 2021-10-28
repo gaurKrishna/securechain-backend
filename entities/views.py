@@ -284,8 +284,6 @@ class AllowedReceivers(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        supply_chain = serializer.validated_data.get("supply_chain")
-
         try:
             instance = Instance.objects.get(user=request.user)
         except Instance.DoesNotExist:
