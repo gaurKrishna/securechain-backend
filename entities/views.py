@@ -278,7 +278,7 @@ class AllowedReceivers(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = SupplychainPKSerializer
 
-    def get(self, request):
+    def post(self, request):
         serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
