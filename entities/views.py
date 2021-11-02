@@ -288,24 +288,34 @@ class EnrolledSupplyChain(APIView):
 
 class AllowedReceivers(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = SupplychainPKSerializer
+    serializer_class = InstanceSerializer
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+    def get(self, request, *args, **kwargs):
+        # serializer = self.serializer_class(data=request.data)
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # if not serializer.is_valid():
+        #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        pk = kwargs.get("pk", None)
 
         try:
-            instance = Instance.objects.get(user=request.user)
-        except Instance.DoesNotExist:
-            return Response({"error": "User not an instance of supply chain"})
+            supply_chain = SupplyChain.objects.get(id=pk)
+        except SupplyChain.DoesNotExist:
+            return Response({"error": "Invalid supply chain id"}, status=status.HTTP_400_BAD_REQUEST)
 
-        entity = instance.entity
+        entities = Instance.objects.filter(user=request.user).values_list("entity" ,"entity__supply_chain")
 
-        destination_entity = Flow.objects.filter(source=entity).values_list("destination", flat=True)
+        supply_chain_entity = []
+
+        for entity, supply_chain_id in entities:
+            if supply_chain_id == supply_chain.id:
+                supply_chain_entity.append(entity)
+
+        destination_entity = Flow.objects.filter(source_id__in = supply_chain_entity).values_list("destination", flat=True)
 
         destination_instances = Instance.objects.filter(entity__in = destination_entity)
+
+        print(destination_instances)
 
         response_data = InstanceSerializer(destination_instances, many=True).data
 
