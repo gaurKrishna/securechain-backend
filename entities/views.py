@@ -4,6 +4,7 @@ from django.db.models.base import Model
 from django.http.request import validate_host
 from django.views import generic
 from rest_framework import response
+from rest_framework import permissions
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -271,6 +272,16 @@ class MySupplyChain(APIView):
         my_supply_chain = SupplyChain.objects.filter(owner=request.user)
         response_data = SupplyChainSerializer(my_supply_chain, many=True).data
 
+        return Response(response_data, status=status.HTTP_200_OK)
+
+class EnrolledSupplyChain(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SupplyChain
+
+    def get(self, request):
+        entities = Instance.objects.filter(user=request.user).values_list("entity", flat=True)
+        supply_chain = SupplyChain.objects.filter(entity__in = entities)
+        response_data = self.serializer_class(supply_chain, many=True).data
         return Response(response_data, status=status.HTTP_200_OK)
 
 
