@@ -274,9 +274,10 @@ class MySupplyChain(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 class EnrolledSupplyChain(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = SupplyChain
+    serializer_class = SupplyChainSerializer
 
     def get(self, request):
         entities = Instance.objects.filter(user=request.user).values_list("entity", flat=True)
