@@ -176,8 +176,8 @@ class InstanceApi(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        if request.user.role != "PARTICIPANT":
-            return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        # if request.user.role != "PARTICIPANT":
+        #     return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
         generic_attribute_data = serializer.validated_data.pop("generic_attribute_data")
 
