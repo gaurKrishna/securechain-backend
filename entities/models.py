@@ -19,7 +19,7 @@ class Entity(models.Model):
 class Instance(models.Model):
     name = models.CharField(max_length=255, blank=False, null=False)
     entity = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="parent_entity")
-    etherium_address = models.CharField(max_length=255, null=False, blank=True)
+    ethereum_address = models.CharField(max_length=255, null=False, blank=True)
     connected_supply_chain = models.ForeignKey(
         SupplyChain, 
         on_delete=models.CASCADE, 
