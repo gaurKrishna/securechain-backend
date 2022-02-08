@@ -229,7 +229,7 @@ class FlowApi(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
 
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, many=True)
         
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -241,7 +241,10 @@ class FlowApi(ModelViewSet):
             return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if source.supply_chain != destination.supply_chain:
-            return Response({"error": "The source and destination should beong to the same supply chain"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "The source and destination should beong to the same supply chain"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return super().create(request, *args, **kwargs)
 
