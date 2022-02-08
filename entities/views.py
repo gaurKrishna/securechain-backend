@@ -1,5 +1,6 @@
 import json
 from enum import EnumMeta
+from os import stat
 from django.db.models.base import Model
 from django.http.request import validate_host
 from django.views import generic
@@ -248,7 +249,12 @@ class FlowApi(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return super().create(request, *args, **kwargs)
+        created_flow = Flow.objects.bulk_create([Flow(data) for data in serializer.validated_data])
+        
+        serialized_data = self.serializer_class(created_flow, many=True)
+
+        return Response(serialized_data, status=status.HTTP_200_OK) 
+        # return super().create(request, *args, **kwargs)
 
 class EntityBySupplychain(APIView):
     
