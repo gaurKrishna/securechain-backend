@@ -235,6 +235,8 @@ class FlowApi(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        flows = []
+
         for data in serializer.validated_data:
     
             source = data.get("source")
@@ -251,9 +253,11 @@ class FlowApi(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        created_flow = Flow.objects.bulk_create([Flow(**data) for data in serializer.validated_data])
-        
-        serialized_data = self.serializer_class(created_flow, many=True)
+            flow = Flow(**data)
+            flow.save()
+            flows.append(flow)
+
+        serialized_data = self.serializer_class(flows, many=True)
 
         return Response(serialized_data.data, status=status.HTTP_200_OK) 
         # return super().create(request, *args, **kwargs)
