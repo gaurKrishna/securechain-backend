@@ -241,6 +241,8 @@ class FlowApi(ModelViewSet):
             destination = data.get("destination")
 
             if request.user != source.supply_chain.owner:
+                print(request.user)
+                print(source.supply_chain.owner)
                 return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
             if source.supply_chain != destination.supply_chain:
@@ -249,11 +251,11 @@ class FlowApi(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        created_flow = Flow.objects.bulk_create([Flow(data) for data in serializer.validated_data])
+        created_flow = Flow.objects.bulk_create([Flow(**data) for data in serializer.validated_data])
         
         serialized_data = self.serializer_class(created_flow, many=True)
 
-        return Response(serialized_data, status=status.HTTP_200_OK) 
+        return Response(serialized_data.data, status=status.HTTP_200_OK) 
         # return super().create(request, *args, **kwargs)
 
 class EntityBySupplychain(APIView):
