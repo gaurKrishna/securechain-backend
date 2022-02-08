@@ -233,20 +233,24 @@ class FlowApi(ModelViewSet):
         
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        print(serializer.validated_data)
     
-        source = serializer.validated_data.get("source")
-        destination = serializer.validated_data.get("destination")
+        # source = serializer.validated_data.get("source")
+        # destination = serializer.validated_data.get("destination")
 
-        if request.user != source.supply_chain.owner:
-            return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        # if request.user != source.supply_chain.owner:
+        #     return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        if source.supply_chain != destination.supply_chain:
-            return Response(
-                {"error": "The source and destination should beong to the same supply chain"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # if source.supply_chain != destination.supply_chain:
+        #     return Response(
+        #         {"error": "The source and destination should beong to the same supply chain"}, 
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
 
-        return super().create(request, *args, **kwargs)
+        # return super().create(request, *args, **kwargs)
+
+        return Response({"status": "Lets go"}, status=status.HTTP_200_OK)
 
 
 class EntityBySupplychain(APIView):
