@@ -1,15 +1,8 @@
-import json
-from enum import EnumMeta
-from os import stat
-from django.db.models.base import Model
-from django.http.request import validate_host
-from django.views import generic
-from rest_framework import response
-from rest_framework import permissions
+from datetime import datetime
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from supplychain.models import SupplyChain
 from .serializers import (
@@ -17,10 +10,9 @@ from .serializers import (
     TemplateSerializer, 
     EntitySerializer, 
     InstanceSerializer, 
-    GenericAttributesSerializer, 
     FlowSerializer,
 )
-from .models import Template, Entity, Instance, GenericAttributes, GenericAttributeData, Flow
+from .models import Template, Entity, Instance,Flow
 from supplychain.serializers import SupplyChainSerializer
 from supplychain.models import SupplyChain
 
@@ -80,22 +72,21 @@ class EntityApi(ModelViewSet):
 
         if request.user != supply_chain.owner:
             return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        generic_attributes = serializer.validated_data.pop("generic_attributes")
-        generic_attributes = [dict(generic_attribute) for generic_attribute in generic_attributes]
         
-        template = serializer.validated_data.get("template")
-        template = template.attributes.split(";")
-        template = [json.loads(temp) for temp in template]
+        data = serializer.validated_data
 
-        for temp in template:
-            generic_attributes.append(temp)
+        # Taking generic attributes from the template
+        generic_attributes = data.pop("generic_attributes")
+
+        template = data.get("template")
+        template_attributes = template.attributes
+
+        for key in template_attributes.keys():
+            generic_attributes[key] = template_attributes[key]
+
+        data["generic_attributes"] = generic_attributes
         
-        entity = Entity.objects.create(**serializer.validated_data)
-
-        for generic_attribute in generic_attributes:
-            generic_attribute["entity"] = entity
-            generic_attribute = GenericAttributes.objects.create(**generic_attribute)
+        entity = Entity.objects.create(**data)
 
         serializer = self.serializer_class(entity)
 
@@ -176,19 +167,18 @@ class InstanceApi(ModelViewSet):
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # if request.user.role != "PARTICIPANT":
-        #     return Response({"status": "User unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        generic_attribute_data = serializer.validated_data.pop("generic_attribute_data")
+        data = serializer.validated_data
 
-        entity = serializer.validated_data.get("entity")
+        generic_attributes_data = data.get("generic_attributes_data")
 
-        generic_attributes = list(entity.generic_attributes.all())
+        entity = data.get("entity")
 
-        connected_supply_chain = serializer.validated_data.get("connected_supply_chain", None)
+        generic_attributes = entity.generic_attributes
 
-        connecting_entity = serializer.validated_data.get("connecting_entity", None)
+        connected_supply_chain = data.get("connected_supply_chain", None)
+
+        connecting_entity = data.get("connecting_entity", None)
 
         connected_flow = None
         if connected_supply_chain:
@@ -196,24 +186,45 @@ class InstanceApi(ModelViewSet):
                 connected_flow = Flow(source=entity, destination=connecting_entity)
             else:
                 return Response({"error": "Connecting entity must be selected if you want to add your supply chain"}, status=status.HTTP_400_BAD_REQUEST)
+   
+        if generic_attributes.keys() != generic_attributes_data.keys():
+            return Response(
+                {"error": "Invalid generic attributes provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-            
+        for key in generic_attributes_data.keys():
+            attribute_data = generic_attributes_data[key]
 
-        for gd in generic_attribute_data:
-            if gd["generic_attribute"] not in generic_attributes:
-                return Response(
-                    {"Error": f"Generic attribute data passed must be from the generic attributes of the entity"}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            if generic_attributes[key] == "Alphanumeric":
+                if not attribute_data.isalnum():
+                    return Response(
+                        {"error": f"{key} must be an alphanumeric"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            if generic_attributes[key] == "String":
+                if not type(attribute_data) is str:
+                    return Response(
+                        {"error": f"{key} must be a string"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            if generic_attributes[key] == "Date":
+                try:
+                    datetime.strptime(attribute_data[key], '%b %d %Y %I:%M%p')
+                except:
+                    return Response({"error": "Invalid format for datetime object"})
 
-        instance = Instance.objects.create(**serializer.validated_data, user=request.user)
+            if generic_attributes[key] == "Number":
+                try:
+                    attribute_data = int(attribute_data)
+                except:
+                    return Response({"error": f"{key} must be a numeric"}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    
+        instance = Instance.objects.create(**data, user=request.user)
         
         if connected_flow:
             connected_flow.save()
-
-        for gd in generic_attribute_data:
-            gd["instance"] = instance
-            GenericAttributeData.objects.create(**gd)
 
         return Response(
             {
@@ -337,3 +348,19 @@ class AllowedReceivers(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class InstanceByEntity(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        
+        entity_id = kwargs.get("entity", None)
+
+        if entity_id is None:
+            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        instances = Instance.objects.filter(entity=entity_id)
+
+        response_data = InstanceSerializer(instances, many=True).data
+
+        return Response(response_data, status=status.HTTP_200_OK)

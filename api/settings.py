@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'authentication',
     'entities',
     'supplychain',
+    'optimization',
     'corsheaders',
 ]
 
