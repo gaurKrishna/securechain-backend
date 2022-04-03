@@ -1,3 +1,4 @@
+from ast import operator
 from inspect import Parameter
 from urllib import response
 from rest_framework.views import APIView
@@ -14,11 +15,11 @@ class OptimizationApi(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         supplychain_id = kwargs.get("supplychain", None)
         entity_id = kwargs.get("entity", None)
 
-        if supplychain_id or entity_id is None:
+        if supplychain_id is None or entity_id is None:
             return Response({"Error": "Supply chain id or entity id could not be none"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -44,9 +45,11 @@ class OptimizationApi(APIView):
         goal = data.get("goal", None)
         constraints = data.get("constraints", None)
 
-        if goal or constraints is None:
+        if goal is None or constraints is None:
             return Response({"error": "Goal or constraints can not be none"}, status=status.HTTP_400_BAD_REQUEST)
         
+        goal = int(goal)
+
         #Creating solver object for optimization problem
         solver = pywraplp.Solver.CreateSolver('GLOP')
 
@@ -63,16 +66,34 @@ class OptimizationApi(APIView):
         #Creating Constraints
         i = 0
         for constraint in constraints:
-            parameters = constraint.get("parameter")
+            parameters = constraint.get("parameters")
             constant = int(constraint.get("constant"))
+            operator = constraint.get("operator")
+            start = 0
 
-            ct = solver.Constraint(0, constant, f"ct{i}")
-            for parameter in parameter:
-                ct.SetCoefficient(instance_to_var[parameter.get("variable")], parameter.get("coefficient"))
+            if operator == '=':
+                start = constant
+            
+            ct = solver.Constraint(start, constant, f"ct{i}")
+            
+            for parameter in parameters:
+                print(instance_to_var[parameter.get("variable")])
+                print(parameter.get("coefficient"))
+                coefficient = parameter.get("coefficient", None)
+                
+                if coefficient is None:
+                    return Response({"error": "coefficient can't be none"}, status=status.HTTP_400_BAD_REQUEST)
+
+                coefficient = int(coefficient)
+                
+                ct.SetCoefficient(instance_to_var[parameter.get("variable")], coefficient)
 
         objective = solver.Objective()
+        
+        i = 1 
         for key in instance_to_var.keys():
-            objective.SetCoefficient(instance_to_var[key], 1)
+            objective.SetCoefficient(instance_to_var[key], i)
+            i += 1
     
         objective.SetMinimization()
         solver.Solve()
@@ -80,7 +101,7 @@ class OptimizationApi(APIView):
         response_dict = {"objective_value": objective.Value()}
 
         for key in instance_to_var.keys():
-            response_dict[key] = instance_to_var[key].solution_value
+            response_dict[key] = instance_to_var[key].solution_value()
 
         return Response(
             response_dict,

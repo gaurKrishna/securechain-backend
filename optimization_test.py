@@ -19,14 +19,10 @@ data = {
         {
           "variable" : "Bharat Biotech",
           "coefficient" : 1,
-        },
-        {
-          "variable" : "Serum Institute of India",
-          "coefficient" : 1,
         }
       ],
       "operator" : "<=",
-      "constant" : 1000,
+      "constant" : 500,
     },
   ],
 }
@@ -69,8 +65,8 @@ print(solver.constraints())
 objective = solver.Objective()
 
 
-objective.SetCoefficient(variables[0], 3)
 objective.SetCoefficient(variables[0], 1)
+objective.SetCoefficient(variables[1], 2)
 
 objective.SetMinimization()
 
