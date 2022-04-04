@@ -1,4 +1,5 @@
 from ast import operator
+from http.client import ResponseNotReady
 from inspect import Parameter
 from urllib import response
 from rest_framework.views import APIView
@@ -100,8 +101,10 @@ class OptimizationApi(APIView):
 
         response_dict = {"objective_value": objective.Value()}
 
+        response_dict["vars"] = list()
+
         for key in instance_to_var.keys():
-            response_dict[key] = instance_to_var[key].solution_value()
+            response_dict.append({response_dict[key]: instance_to_var[key].solution_value()})
 
         return Response(
             response_dict,
