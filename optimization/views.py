@@ -40,6 +40,7 @@ class OptimizationApi(APIView):
         i = 0
         for instance in instances:
             instance_to_var[instance.id] = f"var{i}"
+            i += 1
         
         data = request.data
 
@@ -78,8 +79,6 @@ class OptimizationApi(APIView):
             ct = solver.Constraint(start, constant, f"ct{i}")
             
             for parameter in parameters:
-                print(instance_to_var[parameter.get("variable")])
-                print(parameter.get("coefficient"))
                 coefficient = parameter.get("coefficient", None)
                 
                 if coefficient is None:
@@ -103,8 +102,16 @@ class OptimizationApi(APIView):
 
         response_dict["vars"] = list()
 
+        print(instance_to_var)
+
         for key in instance_to_var.keys():
-            response_dict.append({response_dict[key]: instance_to_var[key].solution_value()})
+            for instance in instances:
+                if key == instance.id:
+                    print(key)
+                    print(instance_to_var[key])
+                    name = instance.name
+                    break
+            response_dict["vars"].append({name: instance_to_var[key].solution_value()})
 
         return Response(
             response_dict,
